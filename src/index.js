@@ -6,6 +6,16 @@ function identity(value) {
 }
 
 function ensureObject(value) {
+  if (typeof value === 'string') {
+    try {
+      const jsonObj = JSON.parse(value);
+      return JSON.stringify(jsonObj);
+    } catch (e) {
+      throw new TypeError(
+        `The string '${value}' is not a valid parseable JSON string: ${e.message}`,
+      );
+    }
+  }
   if (typeof value !== 'object' || value === null || Array.isArray(value)) {
     throw new TypeError(
       `JSONObject cannot represent non-object value: ${value}`,
@@ -70,6 +80,17 @@ export const GraphQLJSONObject = new GraphQLScalarType({
   serialize: ensureObject,
   parseValue: ensureObject,
   parseLiteral: (ast, variables) => {
+    if (ast.kind === Kind.STRING) {
+      try {
+        return JSON.parse(ast.value);
+      } catch (e) {
+        throw new TypeError(
+          `The string '${print(ast)}' is not a valid parseable JSON string: ${
+            e.message
+          }`,
+        );
+      }
+    }
     if (ast.kind !== Kind.OBJECT) {
       throw new TypeError(
         `JSONObject cannot represent non-object value: ${print(ast)}`,
